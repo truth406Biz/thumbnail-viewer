@@ -212,6 +212,8 @@
         .preset-group {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap; /* 버튼이 많아지면 줄바꿈 되도록 설정 */
+            justify-content: center;
         }
         button {
             padding: 10px 20px;
@@ -263,7 +265,13 @@
         .preset-btn:hover { background-color: #e6d010; }
         .preset-btn:active { background-color: #cca800; }
 
-        /* 🔥 확대/축소 힌트 영역 */
+        /* 🔥 세로 자동맞춤 버튼 전용 스타일 */
+        #autoHeightBtn {
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+        }
+        #autoHeightBtn:hover { background-color: #d0d0d0; }
+
         .zoom-hint {
             margin-bottom: 15px;
             font-size: 14px;
@@ -279,7 +287,7 @@
         .viewer-wrapper {
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* 세로가 길어질 때 상단 기준으로 길어지도록 변경 */
             min-height: 500px; 
             margin-bottom: 50px;
         }
@@ -290,14 +298,14 @@
             border: 2px dashed #007bff;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             resize: both; 
-            overflow: hidden; /* 영역 밖으로 나가는 이미지 숨김 */
+            overflow: hidden; 
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
         }
         .image-container::before {
-            content: '영역 크기 조절 (우측 하단 드래그)';
+            content: '영역 조절 (우측 하단 드래그)';
             position: absolute;
             top: -22px;
             left: 0;
@@ -307,13 +315,12 @@
             pointer-events: none;
         }
 
-        /* 🔥 확대/축소를 위한 이미지 기본 속성 */
         img {
             width: 100%;
             height: 100%;
             object-fit: contain; 
-            will-change: transform; /* 부드러운 전환을 위한 최적화 */
-            transform-origin: center center;
+            will-change: transform; 
+            transform-origin: center top; /* 확대 시 상단 기준으로 확대되게 변경 (스크롤 최적화) */
         }
     </style>
 </head>
@@ -326,29 +333,28 @@
             
             <div class="modal-section">
                 <h3>1. 데이터 준비 및 적용</h3>
-                <p>두 가지 방법 중 편한 방법을 선택하세요. (<span class="key-badge">http://</span> 또는 <span class="key-badge">https://</span> 형식 모두 인식합니다.)</p>
+                <p>두 가지 방법 중 편한 방법을 선택하세요.</p>
                 <ul>
                     <li><b>CSV 파일:</b> 엑셀에서 .csv 형식으로 저장한 파일을 첨부합니다.</li>
-                    <li><b>텍스트 붙여넣기:</b> 엑셀 셀을 여러 개 드래그 복사한 뒤 빈칸에 바로 붙여넣습니다.</li>
+                    <li><b>텍스트 붙여넣기:</b> 엑셀 셀을 복사한 뒤 빈칸에 바로 붙여넣습니다. (URL이 붙어있어도 자동 분리!)</li>
                 </ul>
             </div>
             
             <div class="modal-section">
-                <h3>2. ⌨️ 기본 단축키 안내</h3>
+                <h3>2. ⌨️ 단축키 안내</h3>
                 <ul>
                     <li><span class="key-badge">Q</span> 또는 <span class="key-badge">←</span> : 이전 이미지</li>
                     <li><span class="key-badge">E</span> 또는 <span class="key-badge">→</span> : 다음 이미지</li>
                     <li><span class="key-badge">1</span>, <span class="key-badge">2</span>, <span class="key-badge">3</span> : 정방형 크기 프리셋 적용</li>
+                    <li><span class="key-badge">A</span> : 세로 길이 자동맞춤 모드 켜기/끄기</li>
                 </ul>
             </div>
 
             <div class="modal-section">
-                <h3>3. 🔍 상세페이지 확대/축소 (Zoom & Pan)</h3>
+                <h3>3. 🔍 상세페이지 열람 기능</h3>
                 <ul>
-                    <li><span class="key-badge">Ctrl + 마우스 휠</span> : 이미지 확대/축소</li>
-                    <li><b>마우스 드래그</b> : 확대된 상태에서 위치 이동</li>
-                    <li><b>일반 마우스 휠</b> : 확대된 상태에서 위/아래 이동</li>
-                    <li><b>더블 클릭</b> : 확대 비율 및 위치 초기화</li>
+                    <li><b>세로 길이 자동맞춤(A):</b> 가로 크기는 유지한 채, 이미지 원본 비율에 맞게 상자가 길어집니다. 마우스 휠로 편하게 스크롤하세요.</li>
+                    <li><b>부분 확대(Ctrl + 휠):</b> 특정 부분을 확대해서 볼 수 있으며, 마우스 드래그로 이동이 가능합니다. (더블클릭 시 원상복구)</li>
                 </ul>
             </div>
         </div>
@@ -365,28 +371,23 @@
 
     <div class="upload-section">
         <p class="upload-section-title">📁 데이터 불러오기 (파일 또는 텍스트)</p>
-        
         <div class="input-group">
             <div>
                 <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
                 <button type="button" class="custom-upload-btn" onclick="document.getElementById('csvFileInput').click()">CSV 파일 선택</button>
                 <span id="csvFileNameDisplay">선택된 파일 없음</span>
             </div>
-            
             <div class="divider">- 또는 -</div>
-            
             <div class="textarea-container">
                 <textarea id="textInput" placeholder="엑셀에서 복사한 URL을 여기에 붙여넣으세요. (여러 셀 복사 가능)"></textarea>
                 <button type="button" class="custom-upload-btn" id="textLoadBtn">텍스트<br>적용</button>
             </div>
         </div>
-
         <button type="button" class="help-btn" onclick="openModal()">💡 사용법 안내</button>
     </div>
 
     <div class="header-info">
         <h2 class="file-name" id="fileName">데이터를 입력해주세요.</h2>
-        
         <div class="page-info-container">
             <input type="number" id="pageInput" value="0" min="1" disabled onchange="jumpToPage(this.value)"> 
             / <span id="totalPages">0</span>
@@ -395,7 +396,7 @@
 
     <div class="setting-container">
         <div class="slider-group">
-            <label for="sizeSlider">상자 크기 조절:</label>
+            <label for="sizeSlider">가로 크기 조절:</label>
             <input type="range" id="sizeSlider" min="100" max="800" value="350" oninput="setSize(this.value, true)">
             <span id="sizeLabel">350px</span>
         </div>
@@ -410,11 +411,15 @@
             <button type="button" class="preset-btn" onclick="setSize(600)">
                 대화면 (600px) <span class="shortcut-hint">[3]</span>
             </button>
+            
+            <button type="button" id="autoHeightBtn" class="preset-btn" onclick="toggleAutoHeight()">
+                ↕️ 세로 길이 자동 (OFF) <span class="shortcut-hint">[A]</span>
+            </button>
         </div>
     </div>
 
     <div class="zoom-hint">
-        🔍 <b>Ctrl + 마우스 휠:</b> 세부 확대/축소 | <b>드래그 또는 휠:</b> 위아래 이동 | <b>더블클릭:</b> 원본 크기 복귀
+        <b>세로 자동맞춤[A]:</b> 마우스 휠 스크롤 | <b>Ctrl + 휠:</b> 세부 확대/축소 | <b>드래그:</b> 확대시 화면 이동
     </div>
 
     <div class="viewer-wrapper">
@@ -426,8 +431,8 @@
     <script>
         let imageUrls = [];
         let currentIndex = 0;
+        let isAutoHeight = false; // 🔥 세로 높이 자동 맞춤 상태 변수
         
-        // 요소
         const csvFileInput = document.getElementById("csvFileInput");
         const csvFileNameDisplay = document.getElementById("csvFileNameDisplay");
         const textInput = document.getElementById("textInput");
@@ -444,7 +449,7 @@
         const sizeLabel = document.getElementById("sizeLabel");
         const helpModal = document.getElementById("helpModal");
 
-        // 🔥 확대/이동(Pan/Zoom) 관련 변수
+        // 확대/이동 관련 변수
         let currentScale = 1;
         let transX = 0;
         let transY = 0;
@@ -480,7 +485,7 @@
                 pageInput.max = urls.length;
                 
                 updateViewer();
-                alert(`${urls.length}개의 이미지를 불러왔습니다! 상세 이미지는 Ctrl+마우스 휠로 확대하세요.`);
+                alert(`${urls.length}개의 이미지를 불러왔습니다!`);
                 
                 csvFileNameDisplay.innerText = sourceName;
                 if (sourceName !== '텍스트 직접 입력') textInput.value = '';
@@ -514,7 +519,6 @@
             prevBtn.disabled = currentIndex === 0;
             nextBtn.disabled = currentIndex === imageUrls.length - 1;
 
-            // 이미지가 바뀔 때 확대 상태 초기화
             resetZoom();
         }
 
@@ -537,16 +541,71 @@
             pageInput.blur();
         }
 
+        // ---------------- 🔥 세로 자동맞춤 (Auto Height) 기능 ----------------
+        function toggleAutoHeight() {
+            isAutoHeight = !isAutoHeight;
+            const btn = document.getElementById("autoHeightBtn");
+            
+            if (isAutoHeight) {
+                btn.style.backgroundColor = "#28a745"; // 초록색 활성화
+                btn.style.color = "#fff";
+                btn.innerHTML = '↕️ 세로 길이 자동 (ON) <span class="shortcut-hint" style="color:#eee">[A]</span>';
+                
+                // 이미 이미지가 로드된 상태라면 즉시 적용
+                if (imgElement.complete && imgElement.naturalWidth) {
+                    applyAutoHeight();
+                }
+            } else {
+                btn.style.backgroundColor = "#e0e0e0"; // 비활성화
+                btn.style.color = "#333";
+                btn.innerHTML = '↕️ 세로 길이 자동 (OFF) <span class="shortcut-hint">[A]</span>';
+                
+                // 원래 설정된 가로 크기 기준의 1:1 정방형으로 원상복구
+                const currentWidth = parseInt(imageBox.style.width, 10);
+                setSize(currentWidth);
+            }
+        }
+
+        function applyAutoHeight() {
+            if (!isAutoHeight) return;
+            const currentWidth = parseInt(imageBox.style.width, 10);
+            const ratio = imgElement.naturalHeight / imgElement.naturalWidth;
+            
+            if (ratio) {
+                const newHeight = Math.round(currentWidth * ratio);
+                imageBox.style.height = newHeight + 'px';
+                sizeLabel.innerText = `${currentWidth}x${newHeight}`;
+            }
+        }
+
+        // 이미지가 로드될 때(다음 이미지로 넘어갈 때 등) 자동으로 높이를 계산하여 맞춤
+        imgElement.onload = function() {
+            if (isAutoHeight) {
+                applyAutoHeight();
+            }
+        };
+
         // ---------------- 상자 크기 (Resize) ----------------
         function setSize(size, isFromSlider = false) {
             imageBox.style.width = size + 'px';
-            imageBox.style.height = size + 'px';
-            sizeLabel.innerText = size + 'px';
+            
+            // 자동 높이 모드일 경우 가로 슬라이더를 움직여도 세로 비율 유지
+            if (isAutoHeight && imgElement.naturalWidth) {
+                const ratio = imgElement.naturalHeight / imgElement.naturalWidth;
+                const newHeight = Math.round(size * ratio);
+                imageBox.style.height = newHeight + 'px';
+                sizeLabel.innerText = `${size}x${newHeight}`;
+            } else {
+                imageBox.style.height = size + 'px';
+                sizeLabel.innerText = size + 'px';
+            }
+            
             if (!isFromSlider) sizeSlider.value = size;
         }
 
         const resizeObserver = new ResizeObserver(entries => {
             for (let entry of entries) {
+                // 마우스 드래그로 수동 조절 시 표시 업데이트
                 const width = Math.round(entry.contentRect.width);
                 const height = Math.round(entry.contentRect.height);
                 sizeLabel.innerText = `${width}x${height}`;
@@ -554,10 +613,9 @@
         });
         resizeObserver.observe(imageBox);
 
-        // ---------------- 🔥 확대/이동 (Zoom & Pan) 기능 ----------------
+        // ---------------- 확대/이동 (Zoom & Pan) 기능 ----------------
         function applyTransform() {
             imgElement.style.transform = `translate(${transX}px, ${transY}px) scale(${currentScale})`;
-            // 확대되었을 때 커서 모양을 잡기(grab)로 변경
             imgElement.style.cursor = currentScale > 1 ? 'grab' : 'default';
         }
 
@@ -565,33 +623,26 @@
             currentScale = 1;
             transX = 0;
             transY = 0;
-            imgElement.style.transition = 'transform 0.2s ease-out'; // 부드러운 복귀
+            imgElement.style.transition = 'transform 0.2s ease-out'; 
             applyTransform();
-            
-            // 이동 중에는 딜레이 없이 움직이도록 트랜지션 해제
             setTimeout(() => { imgElement.style.transition = 'none'; }, 200);
         }
 
-        // 더블 클릭 시 초기화
         imageBox.addEventListener('dblclick', function() {
             if (currentScale > 1) resetZoom();
         });
 
-        // 휠로 확대/축소 및 위아래 이동
         imageBox.addEventListener('wheel', function(e) {
             if (imageUrls.length === 0) return;
 
             if (e.ctrlKey || e.metaKey) {
-                // Ctrl + 휠: 확대/축소
-                e.preventDefault(); // 페이지 전체 확대 방지
+                e.preventDefault(); 
                 
                 let direction = e.deltaY < 0 ? 1 : -1;
-                // 배율이 커질수록 줌 속도를 높여 긴 이미지도 빨리 확대되도록 함
                 let zoomSpeed = currentScale >= 3 ? 0.4 : 0.15;
                 if (currentScale >= 6) zoomSpeed = 0.8;
 
                 currentScale += direction * zoomSpeed;
-                // 세로로 매우 긴 상세페이지를 위해 최대 15배 줌 허용
                 currentScale = Math.max(0.5, Math.min(currentScale, 15)); 
                 
                 if (currentScale <= 1) {
@@ -600,31 +651,27 @@
                 }
                 applyTransform();
             } else {
-                // 일반 휠: 확대된 상태에서 위/아래(좌/우) 스크롤 이동
                 if (currentScale > 1) {
                     e.preventDefault(); 
-                    if (e.shiftKey) {
-                        transX -= e.deltaY;
-                    } else {
-                        transY -= e.deltaY;
-                    }
+                    if (e.shiftKey) transX -= e.deltaY;
+                    else transY -= e.deltaY;
                     applyTransform();
                 }
+                // currentScale이 1배일 때는 preventDefault가 작동하지 않아 
+                // 브라우저 기본 스크롤(세로로 긴 상세페이지 보기)이 가능합니다!
             }
-        }, { passive: false }); // preventDefault 작동을 위해 필수
+        }, { passive: false });
 
-        // 마우스 드래그 이동 (Pan)
         imageBox.addEventListener('mousedown', function(e) {
             if (currentScale > 1) {
                 e.preventDefault();
                 isDragging = true;
                 startDragX = e.clientX - transX;
                 startDragY = e.clientY - transY;
-                imgElement.style.cursor = 'grabbing'; // 잡고 있는 모양
+                imgElement.style.cursor = 'grabbing'; 
             }
         });
 
-        // window에 이벤트를 걸어서 밖으로 마우스가 나가도 드래그가 유지/해제 되도록 함
         window.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
             transX = e.clientX - startDragX;
@@ -638,7 +685,6 @@
                 imgElement.style.cursor = currentScale > 1 ? 'grab' : 'default';
             }
         });
-
 
         // ---------------- 키보드 단축키 ----------------
         document.addEventListener('keydown', function(event) {
@@ -659,6 +705,9 @@
                 setSize(450); 
             } else if (key === '3') {
                 setSize(600); 
+            } else if (key === 'a') {
+                // 🔥 'A' 버튼을 누르면 세로 자동 높이 토글
+                toggleAutoHeight();
             }
         });
 
